@@ -143,7 +143,7 @@ def get_ans(answer_str):
     elif "右" in answer_str:
         return "0"
     elif "" in answer_str:
-        return "1"
+        return ""
 
 def get_emotion(filename):
     if 'CREMAD' in filename:

@@ -143,7 +143,7 @@ def get_ans(answer_str):
     elif "右" in answer_str:
         return "0"
     elif "" in answer_str:
-        return "1"
+        return ""
 
 def get_emotion(filename):
     if 'CREMAD' in filename:
@@ -244,7 +244,7 @@ def page(random_num):
     
     for num in range(video_num):
         #显示页面内容
-        st.write(f'这是第{num+1+random_num*video_num}个视频，名称为{file_list[num+random_num*video_num].rstrip()}')
+        #st.write(f'这是第{num+1+random_num*video_num}个视频，名称为{file_list[num+random_num*video_num].rstrip()}')
         st.subheader(fr"Video {num+1}")
         filename = file_list[num+random_num*video_num].rstrip()
         video_bytes = play_video(filename)
