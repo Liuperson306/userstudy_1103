@@ -107,29 +107,34 @@ def read_email_(myemail, password):
 
 def instrunction():
     st.subheader("Instructions: ")
-    text1 = '请观看两个说话者的短视频。 \
-            您需要选择哪个说话者的面部运动和音频更:blue[同步]，以及哪个说话者的:blue[情感]表达更流畅。'
+    text1 = '请观看两个说话者的短视频。 '
+    text2 =  '您需要选择哪个说话者的面部运动和音频更:blue[同步]，哪个说话者更能:blue[准确]表达指定的:blue[情感]，以及哪个说话者的:blue[情感]表达更:blue[流畅]。'
     st.markdown(text1)
-    #st.markdown(text2)
+    st.markdown(text2)
 
-def QA(data_face, data_lip, num):
+def QA(Lip_Sync, Emo_Acc, Emo_Flu, emotion, num):
     # 定义问题和选项
     question_1 = "哪个说话者的面部运动和音频更:blue[同步]？"
     options_1 = ["", "左边", "右边"]
-    question_2 = "哪个说话者的:blue[情感]表达更流畅？"
+    question_2 = f"说话者的情感为:blue[{emotion}],  哪个说话者更能:blue[准确]表达该情感？"
     options_2 = ["", "左边", "右边"]
+    question_3 = "哪个说话者的:blue[情感]表达的时序变化更:blue[流畅]？"
+    options_3 = ["", "左边", "右边"]
 
     # 显示问题并获取用户的答案
     answer_1 = st.radio(label=question_1, options=options_1, key=fr"button{num}.1")
     answer_2 = st.radio(label=question_2, options=options_2, key=fr"button{num}.2")
+    answer_3 = st.radio(label=question_3, options=options_3, key=fr"button{num}.3")
 
     # 以1/0数据保存
     ans1 = get_ans(answer_1)
     ans2 = get_ans(answer_2)
+    ans3 = get_ans(answer_3)
 
     # 保存结果到列表
-    data_face[num-1] = ans1
-    data_lip[num-1] = ans2
+    Lip_Sync[num-1] = ans1
+    Emo_Acc[num-1] = ans2
+    Emo_Flu[num-1] = ans3
 
 # 将用户的答案转化为1/0
 def get_ans(answer_str):
@@ -139,25 +144,56 @@ def get_ans(answer_str):
         return "0"
     elif "" in answer_str:
         return "1"
-    
+
+def get_emotion(filename):
+    if 'CREMAD' in filename:
+        emotion = filename.split('_')[3]
+    elif 'MEAD' in filename:
+        emotion = filename.split('_')[2]
+    else:
+        emotion = None
+
+    # 检查情感类型
+    if emotion == 'happy' or emotion == 'HAP':
+        emotion = '开心'
+    elif emotion == 'neutral' or emotion == 'NEU':
+        emotion = '中性'
+    elif emotion == 'fear' or emotion == 'FEA':
+        emotion = '害怕'
+    elif emotion == 'sad' or emotion == 'SAD':
+        emotion = '伤心'
+    elif emotion == 'disgusted' or emotion == 'DIS':
+        emotion = '厌恶'
+    elif emotion == 'contempt' or emotion == 'COM':
+        emotion = '轻蔑'
+    elif emotion == 'surprised' or emotion == 'SUR':
+        emotion = '惊讶' 
+    elif emotion == 'angry' or emotion == 'ANG':
+        emotion = '生气' 
+
+    return emotion
+
+
+
 @st.cache_data
 def play_video(file_name):
     video_bytes = open(file_name, 'rb').read()
     return video_bytes
 
 @st.cache_data
-def data_collection(email, password, data_face, data_lip, random_num, array):
+def data_collection(email, password, Lip_Sync, Emo_Acc, Emo_Flu, random_num, array):
     # 发送内容
-    data1 = ''.join(str(x) for x in data_face)
-    data2 = ''.join(str(x) for x in data_lip)
-    string = "face:" + data1 + "\n" + "lip:" + data2
+    data1 = ''.join(str(x) for x in Lip_Sync)
+    data2 = ''.join(str(x) for x in Emo_Acc)
+    data3 = ''.join(str(x) for x in Emo_Flu)
+    string = "lip_sync:" + data1 + "\n" + "emo_acc:" + data2 + "\n" + "emo_flu:" + data3
     localtime = localtime = datetime.now()
     seconds = localtime.strftime('%S')
     
     localtime += timedelta(hours=8)
     localtime = localtime.strftime('%m-%d %H:%M:%S')
     # 打开文件并指定写模式
-    ID = dataset + "_" + str(random_num+1) + "_" + str(array[random_num]) + "_" + seconds
+    ID = dataset + "-" + str(random_num+1) + "-" + str(array[random_num]) + "-" + seconds
     file_name = ID + ".txt"
     file = open(file_name, "w")
     # 将字符串写入文件
@@ -192,8 +228,12 @@ def data_collection(email, password, data_face, data_lip, random_num, array):
 
     return ID, localtime
 
+@st.cache_data
+def get_time():
+    return time.time()
+
 def page(random_num):
-    start_time = int(time.time())
+    start_time = get_time()
     instrunction()
     file = open(fr"filenames_{dataset}_after.txt", "r", encoding='utf-8') 
     file_list = file.readlines()
@@ -201,40 +241,44 @@ def page(random_num):
 
     if "button_clicked" not in st.session_state:
         st.session_state.button_clicked = False
-        
+    
     for num in range(video_num):
         #显示页面内容
         st.write(f'这是第{num+1+random_num*video_num}个视频，名称为{file_list[num+random_num*video_num].rstrip()}')
         st.subheader(fr"Video {num+1}")
-        video_bytes = play_video(file_list[num+random_num*video_num].rstrip())
+        filename = file_list[num+random_num*video_num].rstrip()
+        video_bytes = play_video(filename)
         st.video(video_bytes)
-
+        emotion = get_emotion(filename)
         st.write("看完视频后，请回答下面的问题。")
-        QA(data_face, data_lip, num+1)
+        QA(Lip_Sync, Emo_Acc, Emo_Flu, emotion, num+1)
 
     st.divider()
     
     if not st.session_state.button_clicked:
         if st.button("Submit results"):
-            if any(x == "" for x in data_face or x == "" for x in data_lip):
+            if any(x == "" for x in Lip_Sync or x == "" for x in Emo_Acc or x == "" for x in Emo_Flu):
                 st.warning("Please answer all questions before submitting the results.")
-            if not any(x == "" for x in data_face or x == "" for x in data_lip):
+            if not any(x == "" for x in Lip_Sync or x == "" for x in Emo_Acc or x == "" for x in Emo_Flu):
                 st.write('It will take about 10 seconds, please be patient and wait. ')
                 array = read_email_(myemail, password)
                 array[random_num]+=1
                 send_email(myemail, password, array)
-                ID, localtime = data_collection(myemail, password, data_face, data_lip, random_num, array)
+                ID, localtime = data_collection(myemail, password, Lip_Sync, Emo_Acc, Emo_Flu, random_num, array)
                 st.divider()
-                endtime = int(time.time())
+                end_time = time.time()
+                total_time = int(end_time-start_time)
                 st.markdown(':blue[Please take a screenshot of the following results.]')
                 st.write("**Time of submission:** ", localtime)
-                st.write("**Answering time:** ", endtime-start_time, "s")
-                st.write("**Answering time for each question:** ", (endtime-start_time)/video_num, "s")
+                st.write("**Answering time:** ", str(total_time), "s")
+                st.write("**Answering time for each video:** ", str(round(total_time/video_num, 2)), "s")
                 st.write("**Your results ID:** ", ID)
-                face = ''.join(data_face)
-                lip = ''.join(data_lip)
-                st.write("**Realism:** ", face)
-                st.write("**Lip_Sync:** ", lip)
+                lip_sync = ''.join(Lip_Sync)
+                emo_acc = ''.join(Emo_Acc)
+                emo_flu = ''.join(Emo_Flu)
+                st.write("**Lip_Sync:** ", lip_sync)
+                st.write("**Emo_Acc:** ", emo_acc)
+                st.write("**Emo_Flu:** ", emo_flu)
                 st.session_state.button_clicked = True 
 
     if st.session_state.button_clicked == True:
@@ -249,22 +293,24 @@ if __name__ == '__main__':
     random_range = 10  
     
     st.set_page_config(page_title="userstudy")
-    st.cache_data.clear() # 初始化
+    #st.cache_data.clear() # 初始化
     myemail = st.secrets["my_email"]["email"]  
-    password =  st.secrets["my_email"]["password"]
+    password = st.secrets["my_email"]["password"]
     
     array = read_email(myemail, password)
     #array = [0 for x in range(10)]
     if all((element == times or element > times) for element in array):
         array = [0] * random_range
 
-    if "data_face" and "data_lip" not in st.session_state:
+    if "Lip_Sync" and "Emo_Acc" not in st.session_state:
         # 初始化data变量
-        data_face = [1 for x in range(video_num)]
-        data_lip = [1 for x in range(video_num)]
+        Lip_Sync = [1 for x in range(video_num)]
+        Emo_Acc = [1 for x in range(video_num)]
+        Emo_Flu = [1 for x in range(video_num)]
     else:
-        data_face = st.session_state["data_face"]
-        data_lip = st.session_state["data_lip"]
+        Lip_Sync = st.session_state["Lip_Sync"]
+        Emo_Acc = st.session_state["Emo_Acc"]
+        Emo_Flu = st.session_state["Emo_Flu"]
 
     random_num = 0
 
