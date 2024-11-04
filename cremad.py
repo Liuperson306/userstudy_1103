@@ -15,7 +15,7 @@ def send_email(email, password, array):
     msg = MIMEMultipart()
     msg['From'] = email
     msg['To'] = email  # 收件人邮箱
-    msg['Subject'] = fr'{dataset} Number of submissions {sum(array)}/{random_range*2}'
+    msg['Subject'] = fr'{dataset} Number of submissions {sum(array)}/{random_range*3}'
     
     # 邮件正文
     string = ''.join([str(element) for element in array])
