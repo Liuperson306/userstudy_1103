@@ -297,8 +297,8 @@ if __name__ == '__main__':
     myemail = st.secrets["my_email"]["email"]  
     password = st.secrets["my_email"]["password"]
     
-    array = read_email(myemail, password)
-    #array = [0 for x in range(10)]
+    #array = read_email(myemail, password)
+    array = [0 for x in range(10)]
     if all((element == times or element > times) for element in array):
         array = [0] * random_range
 
